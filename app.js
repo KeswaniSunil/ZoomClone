@@ -37,4 +37,4 @@ io.on('connection',socket=>{
 });
 
 //To make server run on localhost and on 3030 port:- 
-server.listen(3030);
+server.listen(process.env.PORT||3030)
