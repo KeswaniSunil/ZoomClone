@@ -12,7 +12,7 @@
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
-        <script defer src="/socket.io/socket.io.js"></script>
+        <script src="/socket.io/socket.io.js" defer></script>
         <script src="https://kit.fontawesome.com/c939d0e917.js"></script>
         <script>
             const roomId="<%= roomId %>";
@@ -54,7 +54,7 @@
                     </div>
                     <div class="main_controls_blocks">
                        <div class="main_controls_button">
-                           <span class="leave_meeting">Leave Meeting</span>
+                           <span onclick="leave()" class="leave_meeting">Leave Meeting</span>
                         </div>
                     </div>
                 </div>

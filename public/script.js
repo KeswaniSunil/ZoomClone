@@ -1,32 +1,21 @@
-//This all things are explained in video from 46th minute
-//If you have any doubt how socket.io is working then go on to their site,all my code is same as  of their.
-//If you have any doubt how PeerJs is working then go on to their site,all my code is same as  of their.
-
 
 const socket=io('/');
 const videoGrid=document.getElementById('video-grid');
 let peer=new Peer(null,{
     path:"/peerjs",
     host:"/",
+    //in Dev:-
     // port:"3030"
-    port:443
+    //In prod:-
+    port:"443"
 });
 
 const myVideo=document.createElement('video');
 myVideo.muted=true;
 
-
-
-const addVideoStream=(video,stream)=>{
-    video.srcObject=stream;
-    video.addEventListener('loadedmetadata',()=>{
-        video.play();
-    });
-    videoGrid.append(video);
-    console.log("user Video");
-}
-
 let myVideoStream;
+
+const peersOnCall={}
 
 navigator.mediaDevices.getUserMedia({
     video:true,
@@ -35,73 +24,85 @@ navigator.mediaDevices.getUserMedia({
 .then(stream=>{
   myVideoStream=stream;
 
-    //to show user video on browser after his camera is connected:-
     addVideoStream(myVideo,stream);
     
     peer.on('call',call=>{ 
-        console.log("Inside 1");
+        // console.log("Inside 1");
         call.answer(stream);
-        console.log("Inside 2");
+        // console.log("Inside 2");
         const video = document.createElement('video');
-        console.log("Inside 3");        
+        // console.log("Inside 3");        
         call.on('stream',userVideoStream =>{
-            console.log("Inside 4");            
+            // console.log("Inside 4");            
             addVideoStream(video,userVideoStream);
-            console.log("Inside 5");            
+            // console.log("Inside 5");            
         });
-        console.log("Inside 6");
+        // console.log("Inside 6");
     });
 
 
-    //Now sending request to connect this specific user to room id specified on socket.emit()
     socket.on('User-Connected',(userId)=>{
-      console.log("Stream= "+stream);
+      // console.log("Stream= "+stream);
+      //in Dev:-
         connectToNewUser(userId,stream);
+       //In Prod:-
+        // // user is joining
+        // setTimeout(() => {
+        //   // user joined
+        //   connectToNewUser(userId, stream)
+        // }, 3000)
     })
-    //Now for messaging we will use jquery.As we included bootstarp so jquery is also included as it comes as js file when 
-    //you include all js file for bootstrap
     let text=$('#chat_message');
     $('html').keydown((e)=>{
       if(e.which == 13 && text.val().length!=0){
-        console.log("Message being sent to all other Users= "+ text.val());
+        // console.log("Message being sent to all other Users= "+ text.val());
         socket.emit('message',text.val());
         text.val('');
       }
     });
 
     socket.on("createMessage",message=>{
-      console.log("Message Came from server= "+message);
+      // console.log("Message Came from server= "+message);
       $('ul').append(`<li class="message"><b>user</b><br/>${message}</li>`)
     });
 });
 
-peer.on('open',id=>{
-    //this id is for the specific person connecting to the room,so if 4 ppl are in room then 4 peer id will be
-    //geenrated i.e 1 for each user.This id is generated automatically by peerjs
-    console.log("Peer id= "+id+" room= "+roomId);
+socket.on('User-Disconnected', userId => {
+  if(peersOnCall.userId){
+    peersOnCall.userId.close();
+  }
+})
 
-    //Now this specific user wants to join troom now,so for that:-
+peer.on('open',id=>{
+    // console.log("Peer id= "+id+" room= "+roomId);
     socket.emit('Join-Room',roomId,id);    
 });
 
 const connectToNewUser=(userId,stream)=>{
-    console.log("New User "+userId);
-    //here we will use peer to connect to our other user joined in the room.
-    //So to call the other user we need to type all the below code from 61 to 68 line.
+    // console.log("New User "+userId);
     const call=peer.call(userId,stream);
-    console.log("Inside 11");
-    console.log("Call= "+typeof call);
-    //creating video element to show the video of any other user that connected in the room.So in every user screen this function 
-    //will be called for every other person in room except current user and this video element will be created for all other user in curren user's
-    //screen except current user coz for current user we already have created video screen i.e on line 31
+    // console.log("Inside 11");
+    // console.log("Call= "+typeof call);
     const video = document.createElement('video')
-    console.log("Inside 22"+ video);
+    // console.log("Inside 22"+ video);
     call.on('stream',userVideoStream =>{
         addVideoStream(video,userVideoStream );
-        console.log("Inside 33");
+        // console.log("Inside 33");
     });
-    console.log("Inside 44");
-    //Now to answer the call of user,the code is written on line number 33
+    // console.log("Inside 44");
+    call.on('close',()=>{
+      video.remove();
+    })
+    peersOnCall.userId=call;
+}
+
+const addVideoStream=(video,stream)=>{
+  video.srcObject=stream;
+  video.addEventListener('loadedmetadata',()=>{
+      video.play();
+  });
+  videoGrid.append(video);
+  // console.log("user Video");
 }
 
 const muteUnmute = () => {
@@ -134,12 +135,17 @@ const setUnmuteButton = () => {
 const playStop = () => {
   // console.log('object')
   let enabled = myVideoStream.getVideoTracks()[0].enabled;
-  if (enabled) {
+  // console.log("Video info= "+ myVideoStream.getVideoTracks()[0]);
+  // if (myVideoStream.getVideoTracks()[0].readyState==='live') {
+  if(enabled){
     myVideoStream.getVideoTracks()[0].enabled = false;
+    // myVideoStream.getVideoTracks()[0].stop();
     setPlayVideo()
   } else {
     setStopVideo()
     myVideoStream.getVideoTracks()[0].enabled = true;
+    // myVideoStream.getVideoTracks()[0].start();
+    // myVideoStream.start();
   }
 }
 const setStopVideo = () => {
@@ -156,4 +162,8 @@ const setPlayVideo = () => {
     <span>Play Video</span>
   `
   document.querySelector('.main_video_button').innerHTML = html;
+}
+
+const leave=()=>{
+
 }
