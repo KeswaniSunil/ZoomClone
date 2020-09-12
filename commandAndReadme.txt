@@ -30,3 +30,5 @@ everytime you make any change to your code then run following commands:- git add
 
 
 18)Peerjs has ability to create connection between different users using web rtc.
+19)For you to get multiple videos, you must connect to a network (local network, internet, or just turn on your PC hotspot) this is because webrtc work over a network.
+20)  Peer.connections[peerId][0].close()

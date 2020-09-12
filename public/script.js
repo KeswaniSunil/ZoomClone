@@ -68,9 +68,10 @@ navigator.mediaDevices.getUserMedia({
 });
 
 socket.on('User-Disconnected', userId => {
-  if(peersOnCall.userId){
-    peersOnCall.userId.close();
-  }
+  // if(peersOnCall.userId){
+    // peersOnCall.userId.close();
+    peer.connections[userId][0].close()
+  // }
 })
 
 peer.on('open',id=>{
