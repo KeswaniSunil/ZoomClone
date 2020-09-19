@@ -24,11 +24,22 @@ Commands Used:-
 		If you deploy your app again, a new slug will be generated and stored, and your currently running dynos will be destroyed, to be replaced by new ones 		with the new version of your code.)
 -heroku open(to open app in web browser)
 -heroku logs --tail (If any error occured and app didn't started on browser then you can check logs using this command)
-
+-heroku apps :- to see all your heroku apps
+-heroku apps:destroy appname:- to destroy app
 everytime you make any change to your code then run following commands:- git add . ,git commit -m 'mesg' , git push heroku master,heroku ps:scale web=1
 
-
+URL:- https://afternoon-taiga-49612.herokuapp.com/61e10d77-1ddd-49e3-9955-31a28ebdb261
 
 18)Peerjs has ability to create connection between different users using web rtc.
 19)For you to get multiple videos, you must connect to a network (local network, internet, or just turn on your PC hotspot) this is because webrtc work over a network.
 20)  Peer.connections[peerId][0].close()
+
+
+WebRTC vs WebSockets:- https://bloggeek.me/webrtc-vs-websockets/
+https://peerjs.com/
+
+
+
+
+----------------------Using Simple Peer---------------------------------
+-npm install simple-peer

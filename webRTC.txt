@@ -1,0 +1,268 @@
+//OLD CODE---------
+
+// const rooms={};
+// io.on('connection',socket=>{
+//     console.log("Socket Connected");
+//     //socket variable is object on which user is connecting to.
+//     //First event i have kept that socket will listen to when someone gets connected is 'Join-Room' 
+//     //hence socekt.on will create event listener named 'Join-Room'
+//     socket.on("join room",(roomId)=>{
+//         //now if room already exists then add coming user to this room.
+//         //Everytime new user connects,socket.io generates socket id automatically
+//         //so we will use this id as user id
+//         console.log("User Joined= "+socket.id+" in room= "+roomId);
+//         if(rooms[roomId]){
+//             //so now will push this socket.id in  rooms[roomId]'s array
+//             rooms[roomId].push(socket.id);
+//             console.log("All users in this room= "+rooms[roomId]);
+//         }
+//         else{
+//             //now this room doesnt exists so will first add new room id and then create array for that roomid
+//             //and will add this current user
+//             rooms[roomId]=[socket.id];
+//         }
+
+//         //now will take out the ids of other users in the call except us:-
+//         const otherUser=rooms[roomId].find(id=>id!==socket.id);
+//         if(otherUser){
+//             console.log("Current User= "+socket.id+" otherUser="+otherUser);
+//             socket.emit('other user',otherUser);
+//             //will send othrUser that we have joined this room
+//             socket.to(otherUser).emit("user joined",socket.id);
+//         }
+
+//     });
+//     socket.on('offer',payload=>{
+//         //payload.target means other user in call 
+//         io.to(payload.target).emit('offer',payload);
+//     })  
+//     socket.on('answer',payload=>{
+//         //payload.target means other user in call and this event is to answer back anithr user that you have recieved/answered their offer 
+//         io.to(payload.target).emit('answer',payload);
+//     });
+//     //Whats the purpose of ice-candidate? do directly from video from 14th minute 
+//     socket.on('ice-candidate',incoming=>{
+//         io.to(incoming.target).emit('ice-candidate',incoming.candidate);
+//     })
+//     socket.on('disconnect',()=>{
+//         // io.to(socket.id).emit('disconnect',userId);           
+//     })    
+// });
+//------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const socket = io.connect('/')
+const videoGrid = document.getElementById('video-grid')
+
+
+// const myVideo = document.getElementById('userVideo');
+const myVideo=document.createElement('video');
+myVideo.muted = true;
+myVideo.setAttribute('id','userVideo');
+
+// const partnerVideo=document.getElementById('partnerVideo');
+
+let peersOnCall;
+let peer;
+let myVideoStream;
+
+navigator.mediaDevices.getUserMedia({
+  video: true,
+  audio: true
+}).then(stream => {
+  // myVideo.srcObject = stream;
+  addVideoStream(myVideo,stream);
+  myVideoStream=stream;
+  console.log(myVideoStream);
+  // addVideoStream(myVideo, stream);
+  console.log(socket);
+  socket.emit('join room',roomId);
+  
+  socket.on('other user', userId => {
+    callUser(userId);
+    console.log("Other User= "+userId);
+    peersOnCall = userId;
+  });
+
+  socket.on("user joined", userId => {
+    console.log("UserJoined= "+userId);
+    peersOnCall = userId;
+  });
+  socket.on("offer", handleRecieveCall);
+
+  socket.on("answer", handleAnswer);
+
+  socket.on("ice-candidate", handleNewICECandidateMsg);
+})
+
+const callUser=(userId)=>{
+  peer=createPeer(userId);
+  myVideoStream.getTracks().forEach(track => {
+    peer.addTrack(track,myVideoStream);
+  });
+}
+const createPeer=(userId)=>{
+
+  const mypeer = new RTCPeerConnection({
+    iceServers: [
+        {
+            urls: "stun:stun.stunprotocol.org"
+        },
+        {
+            urls: 'turn:numb.viagenie.ca',
+            credential: 'muazkh',
+            username: 'webrtc@live.com'
+        },
+    ]
+});
+
+mypeer.onicecandidate = handleICECandidateEvent;
+mypeer.ontrack = handleTrackEvent;
+mypeer.onnegotiationneeded = () => handleNegotiationNeededEvent(userId);
+
+return mypeer;
+
+}
+
+const handleNegotiationNeededEvent=(userID)=>{
+  peer.createOffer().then(offer => {
+      return peer.setLocalDescription(offer);
+  }).then(() => {
+      const payload = {
+          target: userID,
+          caller: socket.id,
+          sdp: peer.localDescription
+      };
+      socket.emit("offer", payload);
+  }).catch(e => console.log(e));
+}
+
+const handleRecieveCall=(incoming)=>{
+  peer = createPeer();
+  const desc = new RTCSessionDescription(incoming.sdp);
+  peer.setRemoteDescription(desc).then(() => {
+      console.log("Recieved VideoStream= "+myVideoStream);
+      myVideoStream.getTracks().forEach(track => peer.addTrack(track, myVideoStream));
+  }).then(() => {
+      return peer.createAnswer();
+  }).then(answer => {
+      console.log(answer);
+      return peer.setLocalDescription(answer);
+  }).then(() => {
+      const payload = {
+          target: incoming.caller,
+          caller: socket.id,
+          sdp: peer.localDescription
+      }
+      socket.emit("answer", payload);
+  })
+}
+
+const handleAnswer=(message)=>{
+  const desc = new RTCSessionDescription(message.sdp);
+  peer.setRemoteDescription(desc).catch(e => console.log(e));
+}
+
+const handleICECandidateEvent=(e)=>{
+  if (e.candidate) {
+      const payload = {
+          target: peersOnCall.current,
+          candidate: e.candidate,
+      }
+      socket.emit("ice-candidate", payload);
+  }
+}
+
+const handleNewICECandidateMsg=(incoming)=>{
+  const candidate = new RTCIceCandidate(incoming);
+
+  peer.addIceCandidate(candidate)
+      .catch(e => console.log(e));
+}
+
+const handleTrackEvent=(e)=> {
+  const partnerVideo=document.createElement('video').setAttribute('id',partnerVideo);
+  addVideoStream(partnerVideo,e.streams[0]);
+  console.log("Partner Stream= "+e.streams[0]);
+}
+
+const muteUnmute = () => {
+  const enabled = myVideoStream.getAudioTracks()[0].enabled;
+  if (enabled) {
+    myVideoStream.getAudioTracks()[0].enabled = false;
+    setUnmuteButton();
+  } else {
+    setMuteButton();
+    myVideoStream.getAudioTracks()[0].enabled = true;
+  }
+}
+
+const setMuteButton = () => {
+  const html = `
+    <i class="fas fa-microphone"></i>
+    <span>Mute</span>
+  `
+  document.querySelector('.main_mute_button').innerHTML = html;
+}
+
+const setUnmuteButton = () => {
+  const html = `
+    <i class="unmute fas fa-microphone-slash"></i>
+    <span>Unmute</span>
+  `
+  document.querySelector('.main_mute_button').innerHTML = html;
+}
+
+const playStop = () => {
+  // console.log('object')
+  let enabled = myVideoStream.getVideoTracks()[0].enabled;
+  // console.log("Video info= "+ myVideoStream.getVideoTracks()[0]);
+  // if (myVideoStream.getVideoTracks()[0].readyState==='live') {
+  if(enabled){
+    myVideoStream.getVideoTracks()[0].enabled = false;
+    // myVideoStream.getVideoTracks()[0].stop();
+    setPlayVideo()
+  } else {
+    setStopVideo()
+    myVideoStream.getVideoTracks()[0].enabled = true;
+    // myVideoStream.getVideoTracks()[0].start();
+    // myVideoStream.start();
+  }
+}
+const setStopVideo = () => {
+  const html = `
+    <i class="fas fa-video"></i>
+    <span>Stop Video</span>
+  `
+  document.querySelector('.main_video_button').innerHTML = html;
+}
+
+const setPlayVideo = () => {
+  const html = `
+  <i class="stop fas fa-video-slash"></i>
+    <span>Play Video</span>
+  `
+  document.querySelector('.main_video_button').innerHTML = html;
+}
+function addVideoStream(video, stream) {
+  video.srcObject = stream
+  video.addEventListener('loadedmetadata', () => {
+    video.play()
+  })
+  videoGrid.append(video)
+}
