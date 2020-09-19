@@ -7,8 +7,8 @@ let peer=new Peer(null,{
     //in Dev:-
     // port:"3030"
     //In prod:-
-    port:"443",
-    proxied: true
+    port:"443"
+    // proxied: true
 });
 
 const myVideo=document.createElement('video');
@@ -65,13 +65,13 @@ navigator.mediaDevices.getUserMedia({
     socket.on('User-Connected',(userId)=>{
       // console.log("User Connected= "+userId);
       //in Prod:-
-        // connectToNewUser(userId,stream);
+        connectToNewUser(userId,stream);
        //In Dev:-
         // user is joining
-        setTimeout(() => {
-          // user joined         
-          connectToNewUser(userId, stream)
-        }, 2000)
+        // setTimeout(() => {
+        //   // user joined         
+        //   connectToNewUser(userId, stream)
+        // }, 3000)
     })
     let text=$('#chat_message');
     $('html').keydown((e)=>{
