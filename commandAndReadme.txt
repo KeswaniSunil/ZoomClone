@@ -4,7 +4,7 @@ Commands Used:-
 3)Now we need to install express js so did:- 'npm install express'
 4)Now go to your server.js file to initialize this express project.
 5)Now install nodemon for autorefresh the app on any chnages done so that you don't need to restart the app everytime some change is done.To install nodemon do:- npm install -g nodemon.
-6)To run the app:- nodemon server.js
+6)To run the app:- npm run dev
 7)Now create our first ejs file namely room.js.So create folder view and then inside it create room.ejs.
 8)Now install ejs,so do:- 'npm install ejs'
 9)Now we need that each room on zoom clone need to have their own id i.e unique id so for that we will be using uuid.TO install it:- 'npm install uuid'.
